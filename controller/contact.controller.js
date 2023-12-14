@@ -1,7 +1,8 @@
 const asyncHandler = require("express-async-handler");
-
 const { BadRequestError } = require("../errors/errors");
 const Contact = require("../models/contact.model");
+const { StatusCodes } = require("http-status-codes");
+const ObjectId = require("mongodb").ObjectId;
 
 //@desc Get all contacts
 //@route GET /api/contacts
@@ -12,7 +13,7 @@ const getAllContacts = asyncHandler(async (req, res) => {
 });
 
 //@desc Get a contact
-//@route GET /api/contact/:id
+//@route GET /api/contacts/:id
 //@access public
 const getContact = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -41,4 +42,57 @@ const createContact = asyncHandler(async (req, res) => {
   res.status(201).json({ msg: "Contact created!", data: { ...contact } });
 });
 
-module.exports = { getAllContacts, createContact, getContact };
+//@desc Update a contact
+//@route PUT /api/contacts/:id
+//@access public
+const updateContact = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, email, phone } = req.body;
+
+  const contact = await Contact.findById(id);
+  if (!contact) {
+    res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ success: false, message: `Cannot find contact with id ${id}!` });
+  }
+
+  const updt = await Contact.findByIdAndUpdate(
+    id,
+    { name, email, phone },
+    { new: true }
+  );
+
+  res
+    .status(StatusCodes.CREATED)
+    .json({ success: true, message: `Updated contact for id ${id}!` });
+});
+
+//@desc Delete a contact
+//@route DELETE /api/contacts/:id
+//@access public
+const deleteContact = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const contact = await Contact.findById(id);
+  if (!contact) {
+    res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ success: false, message: `Cannot find contact with id ${id}!` });
+  }
+
+  const del = await Contact.deleteOne({
+    _id: new ObjectId(id),
+  });
+
+  res
+    .status(StatusCodes.CREATED)
+    .json({ success: true, message: `Deleted contact of id ${id}!` });
+});
+
+module.exports = {
+  getAllContacts,
+  createContact,
+  getContact,
+  updateContact,
+  deleteContact,
+};
