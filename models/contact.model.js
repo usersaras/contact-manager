@@ -14,6 +14,11 @@ const contactSchema = mongoose.Schema(
       type: String,
       required: [true, "Phone number name cannot be empty!"],
     },
+    created_by_user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "user",
+    },
   },
   {
     timestamps: true,
