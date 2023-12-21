@@ -7,6 +7,9 @@ const {
   updateContact,
   deleteContact,
 } = require("../controller/contact.controller");
+const authenticateUser = require("../middleware/authenticateUser");
+
+router.use(authenticateUser);
 
 router.route("/").get(getAllContacts);
 

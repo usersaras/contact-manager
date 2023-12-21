@@ -7,15 +7,15 @@ const ObjectId = require("mongodb").ObjectId;
 
 //@desc Get all contacts
 //@route GET /api/contacts
-//@access public
+//@access private
 const getAllContacts = asyncHandler(async (req, res) => {
-  const contacts = await Contact.find();
-  res.status(200).json({ msg: "Get all contacts!" });
+  const contacts = await Contact.find({ created_by_user_id: req.user.id });
+  res.status(200).json({ contacts });
 });
 
 //@desc Get a contact
 //@route GET /api/contacts/:id
-//@access public
+//@access private
 const getContact = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const data = await Contact.findById(id);
@@ -24,7 +24,7 @@ const getContact = asyncHandler(async (req, res) => {
 
 //@desc Create a contact
 //@route POST /api/contacts
-//@access public
+//@access private
 const createContact = asyncHandler(async (req, res) => {
   const { name, email, phone } = req.body;
 
@@ -36,6 +36,7 @@ const createContact = asyncHandler(async (req, res) => {
     name,
     email,
     phone,
+    created_by_user_id: req.user.id,
   });
 
   res.status(201).json({ msg: "Contact created!", data: { ...contact } });
@@ -43,17 +44,22 @@ const createContact = asyncHandler(async (req, res) => {
 
 //@desc Update a contact
 //@route PUT /api/contacts/:id
-//@access public
+//@access private
 const updateContact = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, email, phone } = req.body;
 
   const contact = await Contact.findById(id);
+
   if (!contact) {
-    res
-      .status(StatusCodes.NOT_FOUND)
-      .json({ success: false, message: `Cannot find contact with id ${id}!` });
+    res.status(StatusCodes.NOT_FOUND).json({
+      success: false,
+      message: `Cannot find contact with id ${id}!`,
+    });
     return;
+  }
+  if (contact.created_by_user_id.toString() !== req.user.id) {
+    throw new Error("You do not have pemission!");
   }
 
   const updt = await Contact.findByIdAndUpdate(
@@ -69,7 +75,7 @@ const updateContact = asyncHandler(async (req, res) => {
 
 //@desc Delete a contact
 //@route DELETE /api/contacts/:id
-//@access public
+//@access private
 const deleteContact = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -79,6 +85,9 @@ const deleteContact = asyncHandler(async (req, res) => {
       .status(StatusCodes.NOT_FOUND)
       .json({ success: false, message: `Cannot find contact with id ${id}!` });
     return;
+  }
+  if (contact.created_by_user_id.toString() !== req.user.id) {
+    throw new Error("You do not have pemission!");
   }
 
   const del = await Contact.deleteOne({
