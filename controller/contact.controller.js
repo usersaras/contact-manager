@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const { BadRequestError } = require("../errors/errors");
 const Contact = require("../models/contact.model");
 const { StatusCodes } = require("http-status-codes");
+const logger = require("../config/logger");
 const ObjectId = require("mongodb").ObjectId;
 
 //@desc Get all contacts
@@ -26,8 +27,6 @@ const getContact = asyncHandler(async (req, res) => {
 //@access public
 const createContact = asyncHandler(async (req, res) => {
   const { name, email, phone } = req.body;
-
-  console.log(name, email, phone);
 
   if (!name || !email || !phone) {
     throw new BadRequestError("All fields are mandatory!");
@@ -54,6 +53,7 @@ const updateContact = asyncHandler(async (req, res) => {
     res
       .status(StatusCodes.NOT_FOUND)
       .json({ success: false, message: `Cannot find contact with id ${id}!` });
+    return;
   }
 
   const updt = await Contact.findByIdAndUpdate(
@@ -78,15 +78,20 @@ const deleteContact = asyncHandler(async (req, res) => {
     res
       .status(StatusCodes.NOT_FOUND)
       .json({ success: false, message: `Cannot find contact with id ${id}!` });
+    return;
   }
 
   const del = await Contact.deleteOne({
     _id: new ObjectId(id),
   });
 
-  res
-    .status(StatusCodes.CREATED)
-    .json({ success: true, message: `Deleted contact of id ${id}!` });
+  if (del.deletedCount === 1) {
+    res
+      .status(StatusCodes.CREATED)
+      .json({ success: true, message: `Deleted contact of id ${id}!` });
+  } else {
+    throw new Error(`Could not delete contact of id ${id}! `);
+  }
 });
 
 module.exports = {
