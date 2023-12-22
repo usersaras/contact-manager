@@ -3,7 +3,7 @@ const { StatusCodes } = require("http-status-codes");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { configDotenv } = require("dotenv");
-const { BadRequestError } = require("../errors/errors");
+const { BadRequestError, UnauhtorizedError } = require("../errors/errors");
 const User = require("../models/user.model");
 const logger = require("../config/logger");
 
@@ -71,9 +71,7 @@ const loginUser = asyncHandler(async (req, res) => {
     );
     res.status(StatusCodes.OK).json({ success: true, accessToken });
   } else {
-    res
-      .status(StatusCodes.UNAUTHORIZED)
-      .json({ success: false, msg: "Could not login!" });
+    throw new UnauhtorizedError("Unauthorized username and/or password!");
   }
 });
 

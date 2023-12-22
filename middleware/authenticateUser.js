@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const logger = require("../config/logger");
+const { UnauhtorizedError } = require("../errors/errors");
 
 const authenticateUser = asyncHandler((req, res, next) => {
   logger.info("Authenticating user ...");
@@ -12,7 +13,7 @@ const authenticateUser = asyncHandler((req, res, next) => {
     token = authHeader.split(" ")[1];
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
       if (err) {
-        throw new Error("Unauthorized user!");
+        throw new UnauhtorizedError("Unauthorized user!");
       }
       req.user = decoded.user;
       logger.info("User authenticated!");

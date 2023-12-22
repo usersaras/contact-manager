@@ -1,16 +1,21 @@
 const asyncHandler = require("express-async-handler");
-const { BadRequestError } = require("../errors/errors");
+const {
+  BadRequestError,
+  NotFoundError,
+  ForbiddenError,
+} = require("../errors/errors");
 const Contact = require("../models/contact.model");
 const { StatusCodes } = require("http-status-codes");
 const logger = require("../config/logger");
+const { STATUS_CODES } = require("http");
 const ObjectId = require("mongodb").ObjectId;
 
 //@desc Get all contacts
 //@route GET /api/contacts
 //@access private
 const getAllContacts = asyncHandler(async (req, res) => {
-  const contacts = await Contact.find({ created_by_user_id: req.user.id });
-  res.status(200).json({ contacts });
+  const data = await Contact.find({ created_by_user_id: req.user.id });
+  res.status(200).json({ success: true, data });
 });
 
 //@desc Get a contact
@@ -39,7 +44,9 @@ const createContact = asyncHandler(async (req, res) => {
     created_by_user_id: req.user.id,
   });
 
-  res.status(201).json({ msg: "Contact created!", data: { ...contact } });
+  res
+    .status(STATUS_CODES.CREATED)
+    .json({ msg: "Contact created!", data: { ...contact } });
 });
 
 //@desc Update a contact
@@ -52,17 +59,14 @@ const updateContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(id);
 
   if (!contact) {
-    res.status(StatusCodes.NOT_FOUND).json({
-      success: false,
-      message: `Cannot find contact with id ${id}!`,
-    });
-    return;
-  }
-  if (contact.created_by_user_id.toString() !== req.user.id) {
-    throw new Error("You do not have pemission!");
+    throw new NotFoundError(`Cannot find contact with id ${id}!`);
   }
 
-  const updt = await Contact.findByIdAndUpdate(
+  if (contact.created_by_user_id.toString() !== req.user.id) {
+    throw new ForbiddenError("You do not have access to this resource!");
+  }
+
+  const updated = await Contact.findByIdAndUpdate(
     id,
     { name, email, phone },
     { new: true }
@@ -80,14 +84,12 @@ const deleteContact = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const contact = await Contact.findById(id);
+
   if (!contact) {
-    res
-      .status(StatusCodes.NOT_FOUND)
-      .json({ success: false, message: `Cannot find contact with id ${id}!` });
-    return;
+    throw NotFoundError(`Cannot find contact with id ${id}!`);
   }
   if (contact.created_by_user_id.toString() !== req.user.id) {
-    throw new Error("You do not have pemission!");
+    throw new ForbiddenError("You do not have pemission!");
   }
 
   const del = await Contact.deleteOne({
@@ -96,7 +98,7 @@ const deleteContact = asyncHandler(async (req, res) => {
 
   if (del.deletedCount === 1) {
     res
-      .status(StatusCodes.CREATED)
+      .status(StatusCodes.OK)
       .json({ success: true, message: `Deleted contact of id ${id}!` });
   } else {
     throw new Error(`Could not delete contact of id ${id}! `);

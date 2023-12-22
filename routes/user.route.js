@@ -9,7 +9,7 @@ const authenticateUser = require("../middleware/authenticateUser");
 
 const router = express.Router();
 
-router.route("/").get(getAllUsers);
+router.route("/").get(authenticateUser, getAllUsers);
 router.route("/register").post(createUser);
 router.route("/login").post(loginUser);
 router.route("/me").get(authenticateUser, getCurrentUser);
