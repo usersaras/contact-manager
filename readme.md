@@ -83,7 +83,7 @@ Work in progress.
 - bcypt for password hashing
 - http-status-codes for sending status codes in response
 - express-async-handler
-- doenv
+- dotenv
 
 ## Contributing
 
